@@ -4,9 +4,9 @@ GroupKFold). Text readers = Qwen3-8B rating the assistant's feeling from the tra
 from kfig import *
 T = R["main_T4_predictors"]["kao_val"]
 INSIDE = PURPLE
-ROWS = [("reader_post (text, with reply)", "transcript reader: Qwen3-8B reads the whole conversation", ["conv", "reply"], None, INK),
+ROWS = [("reader_post (text, with reply)", "Qwen3-8B rates the transcript", ["conv", "reply"], None, INK),
         ("valence axis @ stem", "valence direction at “I'm feeling”", ["conv", "reply", "stem"], "stem", INSIDE),
-        ("ridge probe @ stem (CV)", "probe at “I'm feeling”, trained to predict kaomoji valence", ["conv", "reply", "stem"], "stem", INSIDE)]
+        ("ridge probe @ stem (CV)", "probe at “I'm feeling”,<br>trained on kaomoji valence", ["conv", "reply", "stem"], "stem", INSIDE)]
 X0, X1, PW = 0.0, 1.0, 900   # plot spans rho 0..1 over PW px
 px = lambda r: (r - X0) / (X1 - X0) * PW
 def chipstrip(seen, at):
@@ -34,7 +34,7 @@ HTML = f'''<!doctype html><html><head><meta charset="utf-8"><style>{CSS2}
 .strip{{display:flex;gap:44px}}
 .ch{{position:relative;font-size:40px;font-weight:700;border:4px solid #D9D9DE;border-radius:18px;padding:4px 14px;white-space:nowrap}}
 .c1{{background:{UBLUE};color:#fff;border-color:{UBLUE}}} .c3{{border:4px dashed {INK}}} .off{{visibility:hidden}}
-.at{{position:absolute;right:-84px;top:50%;width:64px;height:64px;margin-top:-32px;border-radius:50%;background:{INSIDE};z-index:2}}
+.at{{position:absolute;right:-62px;top:50%;width:44px;height:44px;margin-top:-22px;border-radius:50%;background:{INSIDE};z-index:2}}
 .pl{{position:relative;height:150px}}
 .ci{{position:absolute;top:69px;height:12px;border-radius:6px}}
 .dt{{position:absolute;top:57px;width:36px;height:36px;margin-left:-18px;border-radius:50%;box-sizing:border-box}}
