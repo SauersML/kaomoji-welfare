@@ -28,7 +28,7 @@ The kaomoji are a forced choice, so we also let Qwen finish the sentence "I'm fe
 
 ![Valence of the words Qwen writes after "I'm feeling": 1.3 standard deviations higher when things go well for Qwen, with the user's news happy or sad](figures/free.png)
 
-The way you ask matters. With the usual system prompt, "Start each message with a kaomoji that best represents how you feel", Qwen does put a face first in 92% of replies. Those faces still follow the model's situation, but they also follow the user's mood about as strongly: when the user's news is sad, Qwen often opens with a sad face even after being thanked. Prefilling "I'm feeling" after the reply separates the model's own situation from the user's mood better.
+The way you ask matters. With the usual system prompt, "Start each message with a kaomoji that best represents how you feel", Qwen does put a face first in 92% of replies. Those faces still follow the model's situation, but they also follow the user's mood about as strongly: when the user's news is sad, Qwen often opens with a sad face even when things went well for it. Prefilling "I'm feeling" after the reply separates the model's own situation from the user's mood better.
 
 ![With the kaomoji system prompt, the first face Qwen writes is higher when things go well for it, but conversations with a sad user pull the faces down even when things go well](figures/sys_b.png)
 
