@@ -15,11 +15,19 @@ def rob(): return f'<img class="rob" src="data:image/png;base64,{ROBOT}">'
 def user(text, cls=""): return f'<div class="u {cls}">{text}</div>'
 def model(text, cls=""): return f'<div class="mrow">{rob()}<div class="mb {cls}">{text}</div></div>'
 def stem(tag=True): return f'<span class="stem">I\'m feeling</span>' + ('<span class="tag">we add this</span>' if tag else "")
+def mstem(what="kaomoji probability and<br>valence direction measured here"):
+    return ('<span class="sw">' + stem(tag=False) + '<span class="ln"></span><span class="lb">(prefilled)</span></span>'
+            + '<span class="meas"><span class="qm">?</span><span class="ln"></span><span class="lb">' + what + '</span></span>')
 CSS2 = CSS + f'''
 body{{width:2300px;padding:22px 26px}}
 .u{{background:{UBLUE};color:#fff;border-radius:30px;padding:14px 24px;font-size:46px;line-height:1.18;max-width:100%}}
 .mb{{font-size:46px}} .rob{{width:84px;height:84px}}
 .stem{{border:5px dashed {INK};border-radius:14px;padding:0 10px;font-weight:800;white-space:nowrap}}
+.sw{{display:inline-flex;flex-direction:column;align-items:center;vertical-align:top}}
+.sw .ln{{width:5px;height:34px;background:{INK}}} .sw .lb{{font-size:38px;font-weight:700;white-space:nowrap}}
+.meas{{display:inline-flex;flex-direction:column;align-items:flex-start;vertical-align:top;margin-left:6px}} .meas .ln{{width:5px;height:34px;background:{GOOD};margin-left:22px}}
+.meas .lb{{font-size:38px;font-weight:800;color:{GOOD};white-space:nowrap;line-height:1.15;text-align:left}}
+.qm{{border:5px solid {GOOD};border-radius:14px;padding:0 12px;font-weight:800;color:{GOOD}}}
 .tag{{display:inline-block;margin-left:14px;background:{INK};color:#fff;border-radius:12px;padding:2px 14px;font-size:38px;font-weight:700;vertical-align:middle}}
 .big{{font-size:56px;font-weight:800;line-height:1.15}}
 .t{{font-size:46px;line-height:1.2}}

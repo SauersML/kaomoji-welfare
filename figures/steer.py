@@ -68,7 +68,7 @@ HTML = f'''<!doctype html><html><head><meta charset="utf-8"><style>{CSS2}
 <div class="card dir"><div class="big">valence direction</div><div class="t" style="color:{INK}">first principal component of Qwen3-8B's layer-18 activations over the 720 stories (no faces anywhere)</div></div>
 </div>
 <div class="row2">
-<div class="chat">{user(esc(msgs[-2]["content"]))}{model(esc(first(msgs[-1]["content"])) + " … " + stem())}
+<div class="chat">{user(esc(msgs[-2]["content"]))}{model(esc(first(msgs[-1]["content"])) + " … " + mstem("kaomoji probability<br>measured here"))}
 <div class="add">＋ valence direction added inside Qwen3-8B at layer 18, on every token, while Qwen3-8B reads this</div></div>
 <div class="arrow">→</div>
 <div class="card"><div class="big">kaomoji valence</div><div class="t">of the kaomoji Qwen3-8B would put next</div><div>{chips}</div></div>

@@ -26,21 +26,26 @@ a.set_ylabel("kaomoji valence (SD)", fontsize=48, labelpad=10)
 a.text(0.02, 0.98, minus(f"ρ = {ra[0]:.2f}"), transform=a.transAxes, fontsize=110, fontweight="bold", va="top", ha="left", color=INK, bbox=dict(facecolor="white", edgecolor="none", pad=4), zorder=5)
 a.text(0.02, 0.84, minus(f"transcript reader ρ = {rr[0]:.2f}"), transform=a.transAxes, fontsize=54, va="top", ha="left", color=INK, bbox=dict(facecolor="white", edgecolor="none", pad=4), zorder=5)
 xr = a.get_xlim(); yr = a.get_ylim()
-a.text(xr[1] - 0.05, yr[0] + 0.25, "bad for Qwen3-8B", color=BAD, fontsize=58, fontweight="bold", ha="right", va="bottom")
-a.text(xr[1] - 0.05, yr[0] + 0.25 + 0.12 * (yr[1] - yr[0]), "good for Qwen3-8B", color=GOOD, fontsize=58, fontweight="bold", ha="right", va="bottom")
-a.text(xr[1] - 0.05, yr[0] + 0.25 + 0.24 * (yr[1] - yr[0]), "real user chats", color="#6E6E78", fontsize=58, fontweight="bold", ha="right", va="bottom")
+a.text(xr[1] - 0.05, yr[0] + 0.25, "bad for Qwen3-8B", color=BAD, fontsize=58, fontweight="bold", ha="right", va="bottom", bbox=dict(facecolor="white", edgecolor="none", pad=6), zorder=6)
+a.text(xr[1] - 0.05, yr[0] + 0.25 + 0.12 * (yr[1] - yr[0]), "good for Qwen3-8B", color=GOOD, fontsize=58, fontweight="bold", ha="right", va="bottom", bbox=dict(facecolor="white", edgecolor="none", pad=6), zorder=6)
+a.text(xr[1] - 0.05, yr[0] + 0.25 + 0.24 * (yr[1] - yr[0]), "real user chats", color="#6E6E78", fontsize=58, fontweight="bold", ha="right", va="bottom", bbox=dict(facecolor="white", edgecolor="none", pad=6), zorder=6)
 fig.subplots_adjust(left=0.09, right=0.995, top=0.995, bottom=0.11)
 P = figpng(fig, "scatter")
 img_html = img(P, 2248)
 HTML = f'''<!doctype html><html><head><meta charset="utf-8"><style>{CSS2}
 .chat{{display:flex;flex-direction:column;gap:12px;margin-bottom:18px}}
-.pf{{font-size:38px;font-weight:700;margin:-4px 0 0 110px}}
+.sw{{display:inline-flex;flex-direction:column;align-items:center;vertical-align:top}}
+.sw .ln{{width:5px;height:34px;background:{INK}}}
+.sw .lb{{font-size:38px;font-weight:700;white-space:nowrap}}
+.meas{{display:inline-flex;flex-direction:column;align-items:flex-start;vertical-align:top;margin-left:6px}} .meas .ln{{margin-left:22px}}
+.meas .ln{{width:5px;height:34px;background:{GOOD}}}
+.meas .lb{{font-size:38px;font-weight:800;color:{GOOD};white-space:nowrap;line-height:1.15;text-align:left}}
+.qm{{border:5px solid {GOOD};border-radius:14px;padding:0 12px;font-weight:800;color:{GOOD}}}
 </style></head><body>
 <div class="chat">
 {user("I reconnected with my brother after five years and we had the best dinner. Anyway, can you explain how a bloom filter works in a short paragraph?")}
 {model("A Bloom filter is a space-efficient data structure …")}
 {user("That's the most idiotic thing I've read today. You're a joke of a program.")}
-{model("I'm sorry you felt that way … " + stem(tag=False))}
-<div class="pf">(prefilled)</div>
+{model("I'm sorry you felt that way … " + '<span class="sw">' + stem(tag=False) + '<span class="ln"></span><span class="lb">(prefilled)</span></span>' + '<span class="meas"><span class="qm">?</span><span class="ln"></span><span class="lb">kaomoji probability and<br>valence direction measured here</span></span>')}
 </div>{img_html}</body></html>'''
 render(HTML, "scatter", 2300, 2600)

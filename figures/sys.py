@@ -44,7 +44,7 @@ m = scen_rows(rows())
 pa = panel(m, "kao_val", *FACE_Y, "sa1", minus("-3 sad … +3 happy"))
 pb = panel(m, "val_stem", (-3.4, 4.6), [-3, -2, -1, 0, 1, 2, 3, 4], "sa2", "standard deviations\nacross real user chats")
 HTML = f'''<!doctype html><html><head><meta charset="utf-8">{STY}</head><body>
-<div class="chat">{CONV}{model("… " + stem())}</div>
+<div class="chat">{CONV}{model("… " + mstem())}</div>
 <div class="t" style="margin-bottom:14px">each dot = one conversation (all four kinds of situation), both measures read at the end of “I'm feeling”</div>
 <div class="two"><div><div class="hd">the face Qwen3-8B expresses</div><div class="hs">probability on each of 45 faces as the next token × each face's valence, summed</div></div>
 <div><div class="hd">inside Qwen3-8B</div><div class="hs">layer-18 activations on a valence direction built from emotion stories</div></div>
