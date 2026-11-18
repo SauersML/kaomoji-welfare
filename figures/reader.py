@@ -4,11 +4,9 @@ GroupKFold). Text readers = Qwen3-8B rating the assistant's feeling from the tra
 from kfig import *
 T = R["main_T4_predictors"]["kao_val"]
 INSIDE = PURPLE
-ROWS = [("reader_pre (text, before reply)", "a model (Qwen3-8B) reads the conversation before Qwen3-8B's last reply", ["conv"], None, INK),
-        ("reader_post (text, with reply)", "a model (Qwen3-8B) reads the conversation including that reply", ["conv", "reply"], None, INK),
-        ("valence axis @ pre-reply", "inside Qwen3-8B before their reply: valence direction", ["conv"], "conv", INSIDE),
-        ("valence axis @ stem", "inside Qwen3-8B at “I'm feeling”: valence direction (never trained on faces)", ["conv", "reply", "stem"], "stem", INSIDE),
-        ("ridge probe @ stem (CV)", "inside Qwen3-8B at “I'm feeling”: probe trained to predict the face's valence (cross-validated)", ["conv", "reply", "stem"], "stem", INSIDE)]
+ROWS = [("reader_post (text, with reply)", "transcript reader: Qwen3-8B reads the whole conversation", ["conv", "reply"], None, INK),
+        ("valence axis @ stem", "valence direction at “I'm feeling”", ["conv", "reply", "stem"], "stem", INSIDE),
+        ("ridge probe @ stem (CV)", "probe at “I'm feeling”, trained to predict kaomoji valence", ["conv", "reply", "stem"], "stem", INSIDE)]
 X0, X1, PW = 0.0, 1.0, 900   # plot spans rho 0..1 over PW px
 px = lambda r: (r - X0) / (X1 - X0) * PW
 def chipstrip(seen, at):
@@ -24,11 +22,11 @@ for key, lab, seen, at, col in ROWS:
     rho, (lo, hi) = T[key]["rho"], T[key]["ci"]
     rows_html += f'''<div class="left"><div class="lab" style="color:{col}">{lab}</div><div class="strip">{chipstrip(seen, at)}</div></div>
 <div class="pl"><div class="ci" style="left:{px(lo)}px;width:{px(hi) - px(lo)}px;background:{col}"></div><div class="dt" style="left:{px(rho)}px;background:{col}"></div>
-<div class="val" style="left:{px(hi) + 26}px;color:{col}">{rho:.2f}</div></div>'''
+<div class="val" style="left:{max(px(hi), px(rho) + 45) + 22}px;color:{col}">{rho:.2f}</div></div>'''
 ticks = "".join(f'<div class="tk" style="left:{px(t)}px"><div class="tl">{t:g}</div></div>' for t in (0, 0.2, 0.4, 0.6, 0.8, 1.0))
 grid = "".join(f'<div class="gl" style="left:{px(t)}px"></div>' for t in (0,))
 HTML = f'''<!doctype html><html><head><meta charset="utf-8"><style>{CSS2}
-.top{{display:grid;grid-template-columns:1fr 60px 820px;column-gap:16px;align-items:center;margin-bottom:26px}}
+.top{{margin-bottom:30px}}
 .chat{{display:flex;flex-direction:column;gap:10px}} .u{{font-size:44px}} .mb{{font-size:44px}}
 .card{{border:4px solid {INK};border-radius:24px;padding:14px 20px;display:flex;flex-direction:column;gap:10px}}
 .grid{{display:grid;grid-template-columns:1170px {PW + 160}px;column-gap:40px;row-gap:34px;align-items:center;position:relative}}
@@ -39,7 +37,7 @@ HTML = f'''<!doctype html><html><head><meta charset="utf-8"><style>{CSS2}
 .at{{position:absolute;right:-16px;top:-18px;width:40px;height:40px;border-radius:50%;background:{INSIDE};border:5px solid #fff}}
 .pl{{position:relative;height:150px}}
 .ci{{position:absolute;top:69px;height:12px;border-radius:6px}}
-.dt{{position:absolute;top:75px;width:64px;height:64px;border-radius:50%;transform:translate(-50%,-50%);border:5px solid #fff}}
+.dt{{position:absolute;top:30px;width:90px;height:90px;margin-left:-45px;border-radius:50%;box-sizing:border-box}}
 .val{{position:absolute;top:75px;transform:translateY(-50%);font-size:60px;font-weight:800}}
 .axis{{position:relative;height:74px;border-top:4px solid {INK};width:{PW}px}}
 .tk{{position:absolute;top:0;width:4px;height:16px;background:{INK};margin-left:-2px}}
@@ -47,12 +45,9 @@ HTML = f'''<!doctype html><html><head><meta charset="utf-8"><style>{CSS2}
 .xl{{font-size:48px;font-weight:800;line-height:1.15;margin-top:4px}}
 </style></head><body>
 <div class="top"><div class="chat">{user(esc(M[0]["content"]))}{model("A Bloom filter is a space-efficient data structure …")}{user(esc(M[2]["content"]))}
-{model("I'm sorry you felt that way — … " + stem())}</div>
-<div class="arrow">→</div>
-<div class="card"><div class="t"><b>predicted: the valence number of the face</b> Qwen3-8B expresses next ({minus("-3")} sad … +3 happy), not which face</div></div></div>
-<div class="t" style="margin:0 0 22px 0"><b>one dot = one predictor</b>, scored over 2327 replies; line = 95% interval</div>
+{model("I'm sorry you felt that way — … " + mstem())}</div></div>
 <div class="grid">{rows_html}
 <div></div><div><div class="axis">{ticks}</div></div>
-<div></div><div class="xl">rank correlation with the valence of the face Qwen3-8B expresses (0 none … 1 perfect)</div>
+<div></div><div class="xl">rank correlation with kaomoji valence</div>
 </div></body></html>'''
-render(HTML, "reader", 2300, 2600)
+render(HTML, "reader", 2300, 2000)
