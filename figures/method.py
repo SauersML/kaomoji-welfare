@@ -57,8 +57,7 @@ def inset(marks):
     W, Hh = W_IN, 420; x0, x1 = 760, W - 60; lo, hi = -3, 3
     X = lambda z: x0 + (z - lo) / (hi - lo) * (x1 - x0); yl = 170
     s = f'<svg width="{W}" height="{Hh}" viewBox="0 0 {W} {Hh}" xmlns="http://www.w3.org/2000/svg" font-family=\'{FONT}\'>'
-    s += card(0, 40, 600, 200, "Qwen3‑14B and OLMo‑2‑13B rate each kaomoji alone, from −3 to +3")
-    s += f'<text x="300" y="300" font-size="40" font-weight="800" text-anchor="middle" fill="{INK}">× 45 kaomoji</text>'
+    s += card(0, 30, 620, 250, "Qwen3‑14B and OLMo‑2‑13B rate each of the 45 kaomoji alone, from −3 to +3")
     s += arr(610, 140, 700, yl)
     s += f'<rect x="{x0}" y="{yl-8}" width="{x1-x0}" height="16" rx="8" fill="{INK}"/>'
     for f in F45:

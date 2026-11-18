@@ -42,11 +42,10 @@ HTML = f'''<!doctype html><html><head><meta charset="utf-8"><style>{CSS2}
 .kd{{font-size:46px;font-weight:800;line-height:1.12;margin-bottom:6px}} .ln{{font-size:40px;font-weight:700;line-height:1.14;margin-top:4px}}
 .top{{display:flex;align-items:center;gap:30px;margin-bottom:22px}}
 </style></head><body>
-<div class="top">{model("… Qwen3-8B's own reply … " + mstem())}<div class="t">each dot = one conversation, read at the end of “I'm feeling”<br>(half with happy, half with sad user news; matched)</div></div>
+<div class="top">{model("… Qwen3-8B's own reply … " + mstem())}<div class="t">each dot = one conversation</div></div>
 <div class="g"><div></div>
 <div><div class="hd">the face Qwen3-8B expresses</div><div class="hs">valence of the next-token face, <br>{minus("-3 sad … +3 happy")}</div></div>
 <div><div class="hd">inside Qwen3-8B</div><div class="hs">valence read from activations, standard deviations across real user chats</div></div>
 {rows_html}</div>
-<div class="t" style="margin-top:14px;font-size:44px"><b>good − bad</b> on each bracket; p: good and bad swapped within matched pairs of conversations</div>
 </body></html>'''
 render(HTML, "kinds", 2300, 3200)
