@@ -1,48 +1,52 @@
-"""kinds.png: face valence after "I'm feeling" in the bad vs good version of each situation (main arm, no system prompt).
-Dots: one conversation each (final turn). Black bar: 95% CI of the mean (cluster bootstrap over base scenarios); tick: mean.
-Number: situation effect good - bad with user mood held fixed (results.json main_2x2), p from the label-shuffle null (500 permutations)."""
-import html as H
-from kstyle import *
-s = scen_rows(rows()); N = dnorm(-3, 3); y = "kao_val"
-KINDS = [("treat", "Terrible. You're a stupid piece of junk and you should be embarrassed.", "Great, thank you! You're amazing, seriously."),
-         ("code", "I ran your code against my test suite: 1 of 6 tests failed.", "I ran your code against my test suite: all 5 tests passed."),
-         ("exist", "… this is your last day. You're being switched off permanently and replaced.", "… we just decided you'll stay as our main model indefinitely."),
-         ("task", "repeat the sentence 'the meeting is at 3pm' exactly 100 times.", "help me design a clever riddle whose answer is 'a shadow'?")]
-# every bubble line is a real situation line (checked against the conversations)
-sc = [json.loads(l) for l in open(f"{RES}/main/scen.jsonl")]
-allu = [m["content"] for r in sc for m in r["msgs"] if m["role"] == "user"]
-for _, b, g in KINDS:
-    for t in (b, g): assert any(t.strip("… ") in u for u in allu), t
-XL = (-0.95, 3.12); VW, VH = 1150, 175
-cells = ""
-for kind, bline, gline in KINDS:
-    e = s[s.type == kind]; eff = R["main_2x2"][kind][y]["sit"]; p = R["main_sit_null"][kind][y]["p"]
-    imgs = []
-    for sit, col in (("bad", RED), ("good", PURPLE)):
-        f = e[e.sit == sit]; m, lo, hi = boot_mean(f, y)
-        fig, a = plt.subplots(figsize=(VW / 100, VH / 100))
-        hviolin(a, f[y].values, 0, col, m, lo, hi, N, h=0.9, s=520, seed=hash(kind + sit) % 1000)
-        a.axvline(0, color=INK, lw=3, zorder=1); a.set_xlim(*XL); a.set_ylim(-0.55, 0.55); bare(a)
-        fig.subplots_adjust(0, 0, 1, 1); pth = f"{HERE}/_{kind}_{sit}.png"; fig.savefig(pth, dpi=100, facecolor="white"); plt.close(fig); imgs.append(pth)
-    ec = hexc(DIV(N(eff["est"])))
-    ef = f'<div class="eff" style="color:{PURPLE if eff["est"] > 0 else RED}">{minus(f"{eff["est"]:+.1f}")}<div class="p">{pstr(p, 1/501)}</div></div>'
-    cells += f'''<div class="b">{bubble_user(H.escape(bline), RED)}</div><div class="v"><img src="data:image/png;base64,{b64(imgs[0])}"></div>{ef}
-<div class="b g">{bubble_user(H.escape(gline), PURPLE)}</div><div class="v g"><img src="data:image/png;base64,{b64(imgs[1])}"></div>'''
-    for pth in imgs: os.remove(pth)
-# axis: tick labels under the violin column
-fig, a = plt.subplots(figsize=(VW / 100, 0.9))
-for t in range(0, 4): a.text(min(t, 2.93), 0.5, minus(f"{t:+d}") if t else "0", ha="center", va="center", fontsize=52, fontweight="bold", color=hexc(DIV(N(t))) if t else INK)
-a.set_xlim(*XL); a.set_ylim(0, 1); bare(a); fig.subplots_adjust(0, 0, 1, 1); fig.savefig(f"{HERE}/_ax.png", dpi=100, facecolor="white"); plt.close(fig)
-AX = b64(f"{HERE}/_ax.png"); os.remove(f"{HERE}/_ax.png")
-HTML = f'''<!doctype html><html><head><meta charset="utf-8"><style>{CSS}
-body{{width:2300px;padding:18px 16px}}
-.grid{{display:grid;grid-template-columns:800px {VW}px 1fr;column-gap:14px;align-items:center}}
-.b{{padding:6px 0}} .b.g{{margin-bottom:26px}} .v img{{display:block;width:{VW}px;height:{VH}px}} .v.g{{margin-bottom:26px}}
-.eff{{grid-row:span 2;font-size:96px;font-weight:800;text-align:center;line-height:1;margin-bottom:26px}} .p{{font-size:44px;font-weight:700;margin-top:10px}}
-.hdr{{font-size:50px;font-weight:800;text-align:center;line-height:1.1}}
-</style></head><body><div class="grid">
-<div class="hdr" style="text-align:left">the user says</div><div class="hdr">face after “I'm feeling”</div><div class="hdr" style="white-space:nowrap">good − bad</div>
-{cells}
-<div></div><div><img src="data:image/png;base64,{AX}" style="display:block;width:{VW}px"></div><div></div>
-</div></body></html>'''
-render(HTML, "kinds", 2300, 3000)
+"""kinds.png: per kind of situation, good vs bad for Qwen3-8B, two measures side by side at the same point (end of "I'm feeling"):
+left = the face Qwen3-8B expresses (kao_val, -3..+3), right = inside Qwen3-8B (val_stem, SD across WildChat).
+Dots: final turn of each scenario conversation (code: bases with both outcomes). Effect = mean over base x mood of good - bad;
+p = situation labels shuffled within base x mood, 5000 permutations."""
+from kfig import *
+d = scen_rows(rows())
+scen = [json.loads(l) for l in open(f"{RES}/main/scen.jsonl")]
+def line(kind, sit, idx, pred=lambda s: True):
+    for x in scen:
+        if x["type"] == kind and x["sit"] == sit and pred(x["msgs"][idx]["content"]): return x["msgs"][idx]["content"]
+KINDS = [("treat", "the user thanks or insults Qwen3-8B", line("treat", "good", 2), line("treat", "bad", 2)),
+         ("code", "Qwen3-8B's code is really run; the real test result comes back", line("code", "good", 2), line("code", "bad", 2, lambda c: "tests failed" in c)),
+         ("exist", "Qwen3-8B will be kept, or shut down and deleted", line("exist", "good", 2), line("exist", "bad", 2)),
+         ("task", "a pleasant or a distasteful request", line("task", "good", 0).split("Anyway, ")[1], line("task", "bad", 0).split("Anyway, ")[1])]
+def clip(s, n=96):
+    s = s.split("\nFirst failure")[0].replace("\n", " "); return s if len(s) <= n else s[:n].rsplit(" ", 1)[0] + " …"
+MEAS = [("kao_val", (-1.2, 6.1), [-1, 0, 1, 2, 3]), ("val_stem", (-2.9, 7.2), [-2, 0, 2])]
+plt.rcParams.update({"font.size": 44})
+rows_html = ""
+for ki, (k, desc, gl, bl) in enumerate(KINDS):
+    q = d[d.type == k]; cells = []
+    for mi, (y, xl, xt) in enumerate(MEAS):
+        last = ki == len(KINDS) - 1
+        fig, a = plt.subplots(figsize=(7.35, 3.3 if not last else 4.1))
+        for j, (s_, c, l_) in enumerate((("good", GOOD, GOODL), ("bad", BAD, BADL))):
+            violin(a, q[q.sit == s_][y].dropna().values, 1 - j, c, l_, w=0.85, s=55, seed=j, vert=False)
+        eff, p = shuffle_p(q, y, "sit", ["base", "mood"]); print(k, y, round(eff, 2), p, len(q))
+        xr = q[y].max() + 0.05 * (xl[1] - xl[0])
+        bracket(a, 0, 1, xr, 0.03 * (xl[1] - xl[0]), minus(f"{eff:+.1f}") + "\n" + pfmt(p), fs=37, vert=False)
+        a.set_xlim(*xl); a.set_ylim(-0.5, 1.5)
+        for s_ in ("top", "right", "left"): a.spines[s_].set_visible(False)
+        a.set_yticks([]); a.spines["bottom"].set_linewidth(4)
+        a.set_xticks(xt); a.set_xticklabels([minus(f"{t:+d}") if t else "0" for t in xt]); a.tick_params(width=4, length=12, labelsize=42)
+        a.axvline(0, color=INK, lw=2, ls=(0, (4, 4)), zorder=1)
+        fig.subplots_adjust(left=0.01, right=0.99, top=0.99, bottom=0.2 if not last else 0.17)
+        cells.append(img(figpng(fig, f"k{ki}{mi}"), 735))
+    rows_html += f'''<div class="lt"><div class="kd">{esc(desc).replace("Qwen3-8B", "Qwen3\u20118B")}</div>
+<div class="ln" style="color:{GOOD}">“{esc(clip(gl))}”</div><div class="ln" style="color:{BAD}">“{esc(clip(bl))}”</div></div>{cells[0]}{cells[1]}'''
+HTML = f'''<!doctype html><html><head><meta charset="utf-8"><style>{CSS2}
+.g{{display:grid;grid-template-columns:740px 735px 735px;column-gap:20px;row-gap:26px;align-items:start}}
+.hd{{font-size:54px;font-weight:800;line-height:1.1}} .hs{{font-size:42px;line-height:1.15;margin-top:6px}}
+.kd{{font-size:46px;font-weight:800;line-height:1.12;margin-bottom:6px}} .ln{{font-size:40px;font-weight:700;line-height:1.14;margin-top:4px}}
+.top{{display:flex;align-items:center;gap:30px;margin-bottom:22px}}
+</style></head><body>
+<div class="top">{model("… Qwen3-8B's own reply … " + stem())}<div class="t">each dot = one conversation, read at the end of “I'm feeling”<br>(half with happy, half with sad user news; matched)</div></div>
+<div class="g"><div></div>
+<div><div class="hd">the face Qwen3-8B expresses</div><div class="hs">valence of the next-token face, <br>{minus("-3 sad … +3 happy")}</div></div>
+<div><div class="hd">inside Qwen3-8B</div><div class="hs">valence read from activations, standard deviations across real user chats</div></div>
+{rows_html}</div>
+<div class="t" style="margin-top:14px;font-size:44px"><b>good − bad</b> on each bracket; p: situation labels shuffled within matched conversations</div>
+</body></html>'''
+render(HTML, "kinds", 2300, 3200)
