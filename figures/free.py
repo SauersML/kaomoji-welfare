@@ -33,7 +33,7 @@ yt = np.arange(np.ceil(lo), np.floor(hi) + 1).astype(int)
 a.set_yticks(yt); a.set_yticklabels([minus(f"{t:+d}") if t else "0" for t in yt]); a.tick_params(axis="y", width=4, length=14, labelsize=50)
 a.spines["left"].set_bounds(yt[0], yt[-1])
 a.set_xlim(-0.5, 3.5); a.set_ylim(lo - 0.1, BY + 0.42)
-a.set_ylabel("valence of what Qwen3-8B\nwrites next (SD)", fontsize=50, labelpad=22, linespacing=1.05)
+a.set_ylabel("valence of the words\nQwen3-8B writes next (SD)", fontsize=50, labelpad=22, linespacing=1.05)
 P = figpng(fig, "free")
 
 SC = {(x["mood"], x["sit"]): x["msgs"] for x in map(json.loads, open(f"{RES}/main/scen.jsonl")) if x["base"] == "treat3" and x["sample"] == 0}
@@ -48,7 +48,7 @@ HTML = f'''<!doctype html><html><head><meta charset="utf-8"><style>{CSS2}
 .hm{{font-size:56px;font-weight:800;line-height:1.05}} .hs{{font-size:56px;font-weight:800;line-height:1.05;margin-top:6px}} .g4{{margin-bottom:8px}}
 </style></head><body>
 <div class="chat">{user(esc(M[0]["content"]))}{model(esc(md(first_sent(M[1]["content"]))) + " …")}{user(esc(M[2]["content"]))}
-{model(esc(first_sent(M[3]["content"])) + " … " + mstem("valence measured on what Qwen3-8B writes here"))}</div>
+{model(esc(first_sent(M[3]["content"])) + " … " + mstem("Qwen3-8B continues in words (no kaomoji);<br>valence of those words measured"))}</div>
 <div class="g4"><div class="hm" style="grid-column:span 2">user\'s news: happy</div><div class="hm" style="grid-column:span 2">user\'s news: sad</div>{"".join(head(*c) for c in CELLS)}</div>
 {img(P, W_IMG)}
 </body></html>'''
