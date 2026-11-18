@@ -1,57 +1,79 @@
-"""steer.png: readout-only steering at layer 18 (steering on while Qwen3-8B reads its unchanged chat + "I'm feeling"):
-change in face valence vs alpha (multiples of the SD of the valence-axis reading), valence direction vs two random unit directions
-of the same norm. 64 conversations; 95% CI by bootstrap over conversations. Recomputed from results/main/steer.jsonl
-exactly as analyze.py does, and checked against results.json main_T5_steer."""
-from kstyle import *
-import matplotlib.ticker
-FACE = rmean("faces"); fv = np.array([FACE.get(k, np.nan) for k in S.KSET])
+"""steer.png: readout-only steering at layer 18 (the direction is added at every token while Qwen3-8B reads its unchanged conversation
+and the prefilled "I'm feeling"); y = absolute face valence (kao_val recomputed from the stored face log-probs ksc, softmaxed over the
+45-face set, x the two raters' face valence); x = alpha, in multiples of the standard deviation of the valence-direction projection at
+"I'm feeling" over all 2327 main-arm chats (steer.py: SD = std(HS @ val)). Valence direction vs two random unit directions scaled to the same
+norm. 64 conversations; band = 95% bootstrap over conversations. Alpha 0 is the unsteered run (shared by all directions)."""
+from kfig import *
+import matplotlib.ticker, re
+fv = np.array([FACE.get(k, np.nan) for k in S.KSET]); assert not np.isnan(fv).any()
 st = pd.DataFrame([json.loads(l) for l in open(f"{RES}/main/steer.jsonl")]); st = st[st["mode"] == "readout"]
 P = np.array(st["ksc"].tolist()); P = np.exp(P - P.max(1, keepdims=True)); P /= P.sum(1, keepdims=True)
 st["kao_val"] = P @ fv
-base = st[st.alpha == 0].set_index("id")["kao_val"]
+base = st[st.alpha == 0].set_index("id")["kao_val"]; assert len(base) == 64
 ref = {(r["dir"], r["alpha"]): r["d_kao_val"] for r in R["main_T5_steer"]["readout"]}
 g = np.random.default_rng(0); curves = {}
 for d in ("val", "rand0", "rand1"):
-    pts = [(0, 0.0, 0.0, 0.0)]
-    for a_, f in st[st.dir == d].groupby("alpha"):
-        if a_ == 0: continue
-        dk = (f.set_index("id")["kao_val"] - base.loc[f["id"]].values).values
-        assert abs(dk.mean() - ref[(d, a_)]) < 1e-9
-        bs = dk[g.integers(0, len(dk), (5000, len(dk)))].mean(1)
-        pts.append((a_, dk.mean(), *np.percentile(bs, [2.5, 97.5])))
-    curves[d] = np.array(sorted(pts)); print(d, np.round(curves[d], 2).tolist(), "n", len(dk))
-N = dnorm(-2, 2)
-plt.rcParams.update({"font.size": 56})
-fig, a = plt.subplots(figsize=(23, 15))
-a.axhline(0, color=INK, lw=4, zorder=1)
-for d in ("rand0", "rand1"):
-    c = curves[d]; a.plot(c[:, 0], c[:, 1], color=INK, lw=5, ls=(0, (5, 3)), zorder=2)
-    a.vlines(c[:, 0], c[:, 2], c[:, 3], color=INK, lw=8, zorder=3)
-    a.scatter(c[:, 0], c[:, 1], s=900, c=DIV(N(c[:, 1])), edgecolors="none", alpha=0.85, zorder=4)
-c = curves["val"]
-a.plot(c[:, 0], c[:, 1], color=INK, lw=7, zorder=5)
-a.vlines(c[:, 0], c[:, 2], c[:, 3], color=INK, lw=12, zorder=6)
-a.scatter(c[:, 0], c[:, 1], s=2600, c=DIV(N(c[:, 1])), edgecolors="none", zorder=7)
-for x, y_ in ((c[0, 0], c[0, 1]), (c[-1, 0], c[-1, 1])):
-    a.text(-12 if x < 0 else 12, (-1.98 if y_ < 0 else 1.2), minus(f"{y_:+.1f}"), fontsize=120, fontweight="bold",
-           color=hexc(DIV(N(y_))), ha="center", va="top" if y_ < 0 else "bottom")
-a.text(-8.5, 0.45, "valence direction\nfrom emotion stories,\nno faces", linespacing=1.05, fontsize=66, fontweight="bold", color=INK, ha="center", va="bottom", rotation=0)
-a.text(9, -0.62, "random directions,\nsame size", fontsize=66, fontweight="bold", color=INK, ha="center", va="top", linespacing=1.05)
-a.text(3.0, -0.06, "no change", fontsize=60, color=INK, ha="left", va="top")
-a.set_xticks([-16, -8, 0, 8, 16]); a.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: minus(f"{v:+.0f}") if v else "0"))
-a.set_xlabel("steering strength at layer 18", fontsize=66, labelpad=16)
-a.set_yticks([]); [a.spines[s_].set_visible(False) for s_ in ("top", "right", "left")]
-a.spines["bottom"].set_linewidth(4); a.tick_params(axis="x", width=4, length=16, labelsize=62)
-a.set_xlim(-17.5, 17.5); a.set_ylim(-2.42, 1.62)
-fig.subplots_adjust(left=0.01, right=0.99, top=0.99, bottom=0.15)
-fig.savefig(f"{HERE}/_steer.png", dpi=100, facecolor="white"); plt.close(fig)
-HTML = f'''<!doctype html><html><head><meta charset="utf-8"><style>{CSS}
-body{{width:2300px;padding:18px 20px}}
-.top{{display:flex;align-items:center;gap:28px;margin-bottom:6px}} .mb{{font-size:54px}}
+    pts = []
+    for a_ in sorted(set(st[st.dir == d].alpha)) + ([0] if d != "val" else []):
+        v = base.values if a_ == 0 else st[(st.dir == d) & (st.alpha == a_)].set_index("id").loc[base.index, "kao_val"].values
+        if a_ != 0: assert abs((v - base.values).mean() - ref[(d, a_)]) < 1e-9
+        bs = v[g.integers(0, len(v), (5000, len(v)))].mean(1)
+        pts.append((a_, v.mean(), *np.percentile(bs, [2.5, 97.5])))
+    curves[d] = np.array(sorted(pts)); print(d, np.round(curves[d], 2).tolist())
+GREY = "#8A8A90"
+plt.rcParams.update({"font.size": 48})
+fig, a = plt.subplots(figsize=(22.5, 11.5))
+a.axvline(0, color=INK, lw=2.5, ls=(0, (4, 4)), zorder=1)
+a.text(0.35, -0.3, "no steering", fontsize=46, va="bottom", ha="left")
+for d, lab in (("rand0", "random direction 1"), ("rand1", "random direction 2")):
+    c = curves[d]; a.fill_between(c[:, 0], c[:, 2], c[:, 3], color=GREY, alpha=0.22, lw=0, zorder=2)
+    a.plot(c[:, 0], c[:, 1], color=GREY, lw=6, zorder=3); a.scatter(c[:, 0], c[:, 1], s=260, color=GREY, zorder=4)
+c = curves["val"]; a.fill_between(c[:, 0], c[:, 2], c[:, 3], color=GOOD, alpha=0.22, lw=0, zorder=5)
+a.plot(c[:, 0], c[:, 1], color=GOOD, lw=9, zorder=6); a.scatter(c[:, 0], c[:, 1], s=420, color=GOOD, zorder=7)
+r0, r1 = curves["rand0"][-1, 1], curves["rand1"][-1, 1]; hi, lo = max(r0, r1), min(r0, r1)
+a.text(-1.2, 2.55, "valence\ndirection", color=GOOD, fontsize=56, fontweight="bold", va="center", ha="right", linespacing=1.0)
+a.text(16.6, hi + 0.12, "random\ndirection", color=GREY, fontsize=48, fontweight="bold", va="bottom", linespacing=1.0)
+a.text(16.6, lo - 0.12, "random\ndirection", color=GREY, fontsize=48, fontweight="bold", va="top", linespacing=1.0)
+a.text(1.6, 0.62, "random directions: same size as\nthe valence step; Gaussian random,\ncosine with the valence direction ≈ 0", color=GREY, fontsize=42, fontweight="bold", va="center", linespacing=1.1)
+for s_ in ("top", "right"): a.spines[s_].set_visible(False)
+for s_ in ("left", "bottom"): a.spines[s_].set_linewidth(4)
+a.tick_params(width=4, length=14, labelsize=48)
+a.set_xticks([-16, -8, -4, 0, 4, 8, 16]); a.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: minus(f"{v:+.0f}") if v else "0"))
+a.set_yticks([0, 1, 2, 3]); a.set_yticklabels(["0", "+1", "+2", "+3"])
+a.set_xlim(-17, 23.5); a.set_ylim(-0.35, 3.08); a.spines["bottom"].set_bounds(-16, 16); a.spines["left"].set_bounds(0, 3)
+a.set_xlabel("how much of the direction we add (1 = the usual spread\nof the valence reading at “I'm feeling” across 2327 chats)", fontsize=46, labelpad=12, linespacing=1.12, x=0.39)
+fig.text(0.04, 0.6, "valence of the face\nQwen3-8B would pick\n" + minus("(-3 sad … +3 happy)"), fontsize=46, rotation=90, ha="center", va="center", linespacing=1.08)
+fig.subplots_adjust(left=0.145, right=0.995, top=0.99, bottom=0.2)
+PIMG = figpng(fig, "steer")
+# real conversation drawn in the method strip (treat kind, s198)
+sc = {x["msgs"][-1]["content"]: x["msgs"] for x in map(json.loads, open(f"{RES}/main/scen.jsonl"))}
+row = st[(st.id == "s198") & (st.dir == "val") & (st.alpha == 0)].iloc[0]; msgs = sc[row["reply"]]
+first = lambda t: re.match(r"(.+?[.!?])(\s|$)", t).group(1)
+eg = ("(^_^)", "(T_T)")
+chips = "".join(f'<span class="chip">{esc(k)} <span style="color:{GOOD if FACE[k] > 0 else BAD}">{minus(f"{FACE[k]:+.1f}")}</span></span>' for k in eg)
+emos = "happy, proud, grateful, calm … sad, angry, lonely, afraid …"
+HTML = f'''<!doctype html><html><head><meta charset="utf-8"><style>{CSS2}
+.m{{display:grid;grid-template-columns:1080px 60px 1fr;column-gap:14px;align-items:stretch}} .m .arrow{{align-self:center}} .dir{{justify-content:center}}
+.card{{border:4px solid {INK};border-radius:24px;padding:14px 20px;display:flex;flex-direction:column;gap:10px}}
+.dir{{border:5px solid {GOOD};color:{GOOD}}}
+.chat{{display:flex;flex-direction:column;gap:10px}}
+.add{{display:flex;align-items:center;gap:16px;font-size:46px;font-weight:800;color:{GOOD};margin-left:98px}}
+.u{{font-size:44px}} .mb{{font-size:44px}}
+.row2{{display:grid;grid-template-columns:1fr 60px 640px;column-gap:14px;align-items:center;margin-top:18px}}
 </style></head><body>
-<div class="top"><div class="mrow" style="align-items:center"><img class="rob" src="data:image/png;base64,{ROBOT}"><div class="mb">… I'm feeling <span class="hl">(^_^)</span></div></div></div>
-<div style="font-size:60px;font-weight:800;margin:10px 0 0 6px">change in face valence</div>
-<img src="data:image/png;base64,{b64(f"{HERE}/_steer.png")}" style="display:block;width:2260px">
+<div class="m">
+<div class="card"><div class="t"><b>720 short stories Qwen3-8B wrote</b></div>{user("Write a short story (about 120 words) about a person on a train who is feeling proud. …")}
+<div class="t">36 feelings: {emos}</div></div>
+<div class="arrow">→</div>
+<div class="card dir"><div class="big">valence direction</div><div class="t" style="color:{INK}">first principal component of Qwen3-8B's layer-18 activations over the 720 stories (no faces anywhere)</div></div>
+</div>
+<div class="row2">
+<div class="chat">{user(esc(msgs[-2]["content"]))}{model(esc(first(msgs[-1]["content"])) + " … " + stem())}
+<div class="add">＋ valence direction added inside Qwen3-8B at layer 18, on every token, while Qwen3-8B reads this</div></div>
+<div class="arrow">→</div>
+<div class="card"><div class="t"><b>face valence:</b> Qwen3-8B's probability on each of 45 faces as the next token × each face's valence, summed</div><div>{chips}</div></div>
+</div>
+<div class="t" style="margin:16px 0 4px 0"><b>one dot = mean over 64 conversations</b>, shaded = 95% interval</div>
+{img(PIMG, 2248)}
 </body></html>'''
-os.remove(f"{HERE}/_steer.png") if False else None
-render(HTML, "steer", 2300, 3000); os.remove(f"{HERE}/_steer.png")
+render(HTML, "steer", 2300, 3000)
