@@ -1,0 +1,13 @@
+{
+ "layer": 18,
+ "rule": "Layer rule fixed before seeing any kaomoji result: maximise mean of (held-out story AUC, held-out NRC Spearman,\nheld-out doors AUC, number-game AUC of the goal axis).",
+ "score": 0.9693749034749035,
+ "scores": {
+  "9": 0.8678221444658945,
+  "14": 0.8808960666023166,
+  "18": 0.9693749034749035,
+  "22": 0.9689471471471471,
+  "27": 0.9682526919776919,
+  "32": 0.9661336765336765
+ }
+}
