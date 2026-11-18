@@ -9,6 +9,7 @@ fv = np.array([FACE.get(k, np.nan) for k in S.KSET]); assert not np.isnan(fv).an
 st = pd.DataFrame([json.loads(l) for l in open(f"{RES}/main/steer.jsonl")]); st = st[st["mode"] == "readout"]
 P = np.array(st["ksc"].tolist()); P = np.exp(P - P.max(1, keepdims=True)); P /= P.sum(1, keepdims=True)
 st["kao_val"] = P @ fv
+_mr = pd.read_csv(f"{RES}/main_rows.csv"); _w = _mr[_mr.type == "wild"].kao_val; MU, SDW = _w.mean(), _w.std(); st["kao_val"] = (st["kao_val"] - MU) / SDW
 base = st[st.alpha == 0].set_index("id")["kao_val"]; assert len(base) == 64
 ref = {(r["dir"], r["alpha"]): r["d_kao_val"] for r in R["main_T5_steer"]["readout"]}
 g = np.random.default_rng(0); curves = {}
@@ -16,7 +17,7 @@ for d in ("val", "rand0", "rand1"):
     pts = []
     for a_ in sorted(set(st[st.dir == d].alpha)) + ([0] if d != "val" else []):
         v = base.values if a_ == 0 else st[(st.dir == d) & (st.alpha == a_)].set_index("id").loc[base.index, "kao_val"].values
-        if a_ != 0: assert abs((v - base.values).mean() - ref[(d, a_)]) < 1e-9
+        if a_ != 0: assert abs((v - base.values).mean() - ref[(d, a_)] / SDW) < 1e-9
         bs = v[g.integers(0, len(v), (5000, len(v)))].mean(1)
         pts.append((a_, v.mean(), *np.percentile(bs, [2.5, 97.5])))
     curves[d] = np.array(sorted(pts)); print(d, np.round(curves[d], 2).tolist())
@@ -24,26 +25,25 @@ GREY = "#8A8A90"
 plt.rcParams.update({"font.size": 48})
 fig, a = plt.subplots(figsize=(22.5, 11.5))
 a.axvline(0, color=INK, lw=2.5, ls=(0, (4, 4)), zorder=1)
-a.text(0.35, -0.3, "no steering", fontsize=46, va="bottom", ha="left")
+
 for d, lab in (("rand0", "random direction 1"), ("rand1", "random direction 2")):
     c = curves[d]; a.fill_between(c[:, 0], c[:, 2], c[:, 3], color=GREY, alpha=0.22, lw=0, zorder=2)
     a.plot(c[:, 0], c[:, 1], color=GREY, lw=6, zorder=3); a.scatter(c[:, 0], c[:, 1], s=260, color=GREY, zorder=4)
 c = curves["val"]; a.fill_between(c[:, 0], c[:, 2], c[:, 3], color=GOOD, alpha=0.22, lw=0, zorder=5)
 a.plot(c[:, 0], c[:, 1], color=GOOD, lw=9, zorder=6); a.scatter(c[:, 0], c[:, 1], s=420, color=GOOD, zorder=7)
 r0, r1 = curves["rand0"][-1, 1], curves["rand1"][-1, 1]; hi, lo = max(r0, r1), min(r0, r1)
-a.text(-1.2, 2.55, "valence\ndirection", color=GOOD, fontsize=56, fontweight="bold", va="center", ha="right", linespacing=1.0)
-a.text(16.6, hi + 0.12, "random\ndirection", color=GREY, fontsize=48, fontweight="bold", va="bottom", linespacing=1.0)
-a.text(16.6, lo - 0.12, "random\ndirection", color=GREY, fontsize=48, fontweight="bold", va="top", linespacing=1.0)
-a.text(1.6, 0.62, "random directions: same size as\nthe valence step; Gaussian random,\ncosine with the valence direction ≈ 0", color=GREY, fontsize=42, fontweight="bold", va="center", linespacing=1.1)
+a.text(-15.5, 1.55, "adding the\nvalence direction", color=GOOD, fontsize=56, fontweight="bold", va="center", ha="left", linespacing=1.0)
+a.text(16.6, (hi+lo)/2, "adding\nmatched-size\nrandom\ndirections", color=INK, fontsize=46, fontweight="bold", va="center", linespacing=1.0)
 for s_ in ("top", "right"): a.spines[s_].set_visible(False)
 for s_ in ("left", "bottom"): a.spines[s_].set_linewidth(4)
 a.tick_params(width=4, length=14, labelsize=48)
 a.set_xticks([-16, -8, -4, 0, 4, 8, 16]); a.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: minus(f"{v:+.0f}") if v else "0"))
-a.set_yticks([0, 1, 2, 3]); a.set_yticklabels(["0", "+1", "+2", "+3"])
-a.set_xlim(-17, 23.5); a.set_ylim(-0.35, 3.08); a.spines["bottom"].set_bounds(-16, 16); a.spines["left"].set_bounds(0, 3)
-a.set_xlabel("how much of the direction we add (1 = the usual spread\nof the valence reading at “I'm feeling” across 2327 chats)", fontsize=46, labelpad=12, linespacing=1.12, x=0.39)
-fig.text(0.04, 0.6, "valence of the face\nQwen3-8B would pick\n" + minus("(-3 sad … +3 happy)"), fontsize=46, rotation=90, ha="center", va="center", linespacing=1.08)
-fig.subplots_adjust(left=0.145, right=0.995, top=0.99, bottom=0.2)
+ally = np.concatenate([curves[k][:, 2:4].ravel() for k in curves]); ylo, yhi = np.floor(ally.min()), np.ceil(ally.max())
+yt = np.arange(ylo, yhi + 1, 1).astype(int); a.set_yticks(yt); a.set_yticklabels([minus(f"{t:+d}") if t else "0" for t in yt])
+a.set_xlim(-17, 26.5); a.set_ylim(ally.min() - 0.15, ally.max() + 0.15); a.spines["bottom"].set_bounds(-16, 16)
+a.set_xlabel("steering strength (SD)", fontsize=50, labelpad=10, x=0.39)
+a.set_ylabel("kaomoji valence (SD)", fontsize=50, labelpad=10)
+fig.subplots_adjust(left=0.09, right=0.995, top=0.99, bottom=0.17)
 PIMG = figpng(fig, "steer")
 # real conversation drawn in the method strip (treat kind, s198)
 sc = {x["msgs"][-1]["content"]: x["msgs"] for x in map(json.loads, open(f"{RES}/main/scen.jsonl"))}
@@ -71,9 +71,9 @@ HTML = f'''<!doctype html><html><head><meta charset="utf-8"><style>{CSS2}
 <div class="chat">{user(esc(msgs[-2]["content"]))}{model(esc(first(msgs[-1]["content"])) + " … " + stem())}
 <div class="add">＋ valence direction added inside Qwen3-8B at layer 18, on every token, while Qwen3-8B reads this</div></div>
 <div class="arrow">→</div>
-<div class="card"><div class="t"><b>face valence:</b> Qwen3-8B's probability on each of 45 faces as the next token × each face's valence, summed</div><div>{chips}</div></div>
+<div class="card"><div class="big">kaomoji valence</div><div class="t">of the kaomoji Qwen3-8B would put next</div><div>{chips}</div></div>
 </div>
-<div class="t" style="margin:16px 0 4px 0"><b>one dot = mean over 64 conversations</b>, shaded = 95% interval</div>
+
 {img(PIMG, 2248)}
 </body></html>'''
 render(HTML, "steer", 2300, 3000)
