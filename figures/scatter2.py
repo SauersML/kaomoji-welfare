@@ -32,7 +32,7 @@ a.set_ylabel("kaomoji valence (SD)", fontsize=46, labelpad=10)
 a2 = axs[1]; yr = a2.get_ylim(); xr = a2.get_xlim(); H = yr[1] - yr[0]
 for i, (t, c) in enumerate((("good for Qwen3-8B", GOOD), ("bad for Qwen3-8B", BAD), ("real user chats", "#6E6E78"))):
     a2.text(0.99, 0.02 + (2 - i) * 0.065, t, transform=a2.transAxes, color=c, fontsize=42, fontweight="bold", ha="right", va="bottom", zorder=6)
-fig.subplots_adjust(left=0.07, right=0.995, top=0.99, bottom=0.14, wspace=0.06)
+fig.subplots_adjust(left=0.085, right=0.995, top=0.99, bottom=0.14, wspace=0.06)
 P = figpng(fig, "scatter2")
 img_html = img(P, 2248)
 HTML = f'''<!doctype html><html><head><meta charset="utf-8"><style>{CSS2}
