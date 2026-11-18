@@ -14,11 +14,9 @@ Being insulted moves the face the most. Failing tests moves it too, and those ou
 
 If the faces carry something real, the valence direction inside Qwen should predict them better than someone reading the transcript. It does. We asked Qwen3-8B to rate how the assistant feels from the transcript, with the reply and with any kaomoji removed. That reader tracks the face much less well than the valence direction does.
 
-![Each dot is a conversation. Left: the transcript reader against kaomoji valence, rank correlation 0.43. Right: the valence direction against kaomoji valence, rank correlation 0.67](figures/scatter2.png)
+Over all 2,327 turns (our conversations plus real user chats from WildChat), the reader reaches a rank correlation of 0.31 with the face and the valence direction 0.67. A probe trained on the same activations to predict the face reaches 0.84 on held-out conversations. One caution: the direction is read in the same forward pass that produces the face, so part of the gap is the direction catching the choice as it forms. Read before Qwen writes its reply, the direction does no better than the reader.
 
-Over all 2,327 turns (our conversations plus real user chats from WildChat), the reader reaches a rank correlation of 0.31 with the face and the valence direction 0.67. A probe trained on the same activations to predict the face reaches 0.84. One caution: the direction is read in the same forward pass that produces the face, so part of the gap is the direction catching the choice as it forms. Read before Qwen writes its reply, the direction does no better than the reader.
-
-![Rank correlation with kaomoji valence: transcript reader 0.31, valence direction at "I'm feeling" 0.67, a probe trained on those activations 0.84](figures/reader.png)
+![Every turn plotted three times, once per predictor of kaomoji valence: Qwen3-8B rating the transcript, rank correlation 0.31; the valence direction at "I'm feeling", 0.67; a probe trained on those activations to predict the face, 0.84](figures/scatter3.png)
 
 Correlation is not cause, so we pushed on it. Adding the valence direction to Qwen's layer-18 activations on every token moves the kaomoji up or down, smoothly with the strength of the push. Random directions of the same size barely move it: the valence direction moves the face about four to six times as much.
 
@@ -40,5 +38,5 @@ So the window is partly real. In Qwen3-8B, the face after "I'm feeling" tracks w
 
 - `RESULT.md`: full results with confidence intervals and nulls; `results/results.json` holds every number.
 - `PROMPTS.md`: every prompt, the 45 kaomoji, all situations and user news. `PLAN.md`: the plan and prior work.
-- Pipeline: `gen.py` (conversations), `scen.py`, `act.py` (activations and the valence direction), `free.py` (free continuations), `rate.py` (valence ratings), `steer.py`, `analyze.py`; run with `run1.sh` → `run1b.sh` → `run1c.sh` / `run1d.sh` → `run2.sh`.
+- Pipeline: `gen.py` (conversations), `scen.py`, `act.py` (activations and the valence direction), `free.py` (free continuations), `rate.py` (valence ratings), `steer.py`, `analyze.py`; `stem.py` and `probe.py` re-extract the "I'm feeling" activations (`results/main/HS.npz`) and add the probe's held-out predictions (`probe_stem` in `results/main_rows.csv`); run with `run1.sh` → `run1b.sh` → `run1c.sh` / `run1d.sh` → `run2.sh`.
 - `figures/`: each figure with the script that draws it (`sys.py` draws `sys_a` and `sys_b`).
