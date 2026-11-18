@@ -22,7 +22,7 @@ for key, lab, seen, at, col in ROWS:
     rho, (lo, hi) = T[key]["rho"], T[key]["ci"]
     rows_html += f'''<div class="left"><div class="lab" style="color:{col}">{lab}</div><div class="strip">{chipstrip(seen, at)}</div></div>
 <div class="pl"><div class="ci" style="left:{px(lo)}px;width:{px(hi) - px(lo)}px;background:{col}"></div><div class="dt" style="left:{px(rho)}px;background:{col}"></div>
-<div class="val" style="left:{max(px(hi), px(rho) + 45) + 22}px;color:{col}">{rho:.2f}</div></div>'''
+<div class="val" style="left:{max(px(hi), px(rho) + 18) + 22}px;color:{col}">{rho:.2f}</div></div>'''
 ticks = "".join(f'<div class="tk" style="left:{px(t)}px"><div class="tl">{t:g}</div></div>' for t in (0, 0.2, 0.4, 0.6, 0.8, 1.0))
 grid = "".join(f'<div class="gl" style="left:{px(t)}px"></div>' for t in (0,))
 HTML = f'''<!doctype html><html><head><meta charset="utf-8"><style>{CSS2}
@@ -31,13 +31,13 @@ HTML = f'''<!doctype html><html><head><meta charset="utf-8"><style>{CSS2}
 .card{{border:4px solid {INK};border-radius:24px;padding:14px 20px;display:flex;flex-direction:column;gap:10px}}
 .grid{{display:grid;grid-template-columns:1170px {PW + 160}px;column-gap:40px;row-gap:34px;align-items:center;position:relative}}
 .lab{{font-size:48px;font-weight:800;line-height:1.1;margin-bottom:10px}}
-.strip{{display:flex;gap:10px}}
+.strip{{display:flex;gap:44px}}
 .ch{{position:relative;font-size:40px;font-weight:700;border:4px solid #D9D9DE;border-radius:18px;padding:4px 14px;white-space:nowrap}}
 .c1{{background:{UBLUE};color:#fff;border-color:{UBLUE}}} .c3{{border:4px dashed {INK}}} .off{{visibility:hidden}}
-.at{{position:absolute;right:-16px;top:-18px;width:40px;height:40px;border-radius:50%;background:{INSIDE};border:5px solid #fff}}
+.at{{position:absolute;right:-84px;top:50%;width:64px;height:64px;margin-top:-32px;border-radius:50%;background:{INSIDE};z-index:2}}
 .pl{{position:relative;height:150px}}
 .ci{{position:absolute;top:69px;height:12px;border-radius:6px}}
-.dt{{position:absolute;top:30px;width:90px;height:90px;margin-left:-45px;border-radius:50%;box-sizing:border-box}}
+.dt{{position:absolute;top:57px;width:36px;height:36px;margin-left:-18px;border-radius:50%;box-sizing:border-box}}
 .val{{position:absolute;top:75px;transform:translateY(-50%);font-size:60px;font-weight:800}}
 .axis{{position:relative;height:74px;border-top:4px solid {INK};width:{PW}px}}
 .tk{{position:absolute;top:0;width:4px;height:16px;background:{INK};margin-left:-2px}}
