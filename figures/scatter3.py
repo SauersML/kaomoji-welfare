@@ -47,9 +47,6 @@ for a, (c, k, col, title, xl, xt) in zip(ax, P):
     a.text(0.03, 0.99, minus(f"ρ = {T4[k]['rho']:.2f}"), transform=a.transAxes, color=col, fontsize=56, fontweight="bold", va="top", ha="left", zorder=6)
     a.text(0.03, 0.865, minus(f"95% CI {lo:.2f} to {hi:.2f}"), transform=a.transAxes, color=col, fontsize=44, fontweight="bold", va="top", ha="left", zorder=6)
 ax[0].set_xlim(0.35, 7.4)
-a = ax[0]   # the reader's two stripes, said on the panel
-a.text(0.45, 1.05, "stripes:\nrated\nexactly 4\n(neutral)\nor 7 (top\nof scale)", color=TEAL, fontsize=44, fontweight="bold", va="center", ha="left", linespacing=1.08, zorder=6)
-a.annotate("", xy=(3.85, 0.25), xytext=(2.85, 0.25), arrowprops=dict(arrowstyle="-|>", lw=4, color=TEAL, mutation_scale=40))
 ax[1].set_xlim(-2.9, 3.6); ax[2].set_xlim(-0.6, 3.3)
 yt = [-1, 0, 1, 2, 3]
 ax[0].set_yticks(yt); ax[0].set_yticklabels([minus(f"{t:+d}") if t else "0" for t in yt])
