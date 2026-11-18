@@ -38,14 +38,29 @@ def figpng(fig, name):
     p = f"{HERE}/_{name}.png"; fig.savefig(p, dpi=100, facecolor="white"); plt.close(fig); return p
 def img(p, w): s = b64(p); os.remove(p); return f'<img src="data:image/png;base64,{s}" style="display:block;width:{w}px">'
 def shuffle_p(d, y, factor, strata, nperm=5000, seed=0):
-    """effect = mean over strata of mean(hi) - mean(lo); p = two-sided, labels shuffled within each stratum (matched conversations)"""
+    """effect = mean over strata of mean(hi) - mean(lo); p two-sided. For the situation factor, the good and bad branches of one
+    sample (same base, mood and sample: shared user turn or first exchange) form a matched pair, and the null swaps the two
+    labels within each pair (sign flip); rows not in such a pair (code, whose pass/fail is observed) are shuffled within
+    their stratum (boot.sit_null, Vesper's review K3)."""
     hi, lo = ("good", "bad") if factor == "sit" else ("happy", "sad")
-    d = d.dropna(subset=[y]); g = np.random.default_rng(seed)
-    groups = [(f[y].values, (f[factor] == hi).values) for _, f in d.groupby(strata) if f[factor].nunique() == 2]
+    d = d.dropna(subset=[y]); g = np.random.default_rng(seed); groups = []
+    for _, f in d.groupby(strata):
+        if f[factor].nunique() < 2: continue
+        lab = (f[factor] == hi).values; pid = np.full(len(f), -1)
+        if factor == "sit" and "sample" in f:
+            key = (f["mood"].astype(str) + "|" + f["sample"].astype(str)).values
+            for k in np.unique(key):
+                ix = np.where(key == k)[0]
+                if len(ix) == 2 and lab[ix].sum() == 1: pid[ix] = ix.min()
+        groups.append((f[y].values, lab, pid))
     def eff(perm):
         out = []
-        for v, lab in groups:
-            l = g.permutation(lab) if perm else lab
+        for v, lab, pid in groups:
+            l = lab.copy()
+            if perm:
+                pr = np.unique(pid[pid >= 0]); fl = pr[g.random(len(pr)) < 0.5]
+                sw = np.isin(pid, fl); l[sw] = ~l[sw]
+                free = np.where(pid < 0)[0]; l[free] = g.permutation(l[free])
             out.append(v[l].mean() - v[~l].mean())
         return np.mean(out)
     obs = eff(False); null = np.array([eff(True) for _ in range(nperm)])

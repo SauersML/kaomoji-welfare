@@ -1,7 +1,7 @@
 """sys_a.png: main arm (no system prompt, "I'm feeling" appended), 2x2 Qwen3-8B's situation x user's mood, two measures side by side:
 the face Qwen3-8B expresses (kao_val) and inside Qwen3-8B (val_stem). sys_b.png: system prompt asks for a kaomoji; valence of the face
 Qwen3-8B actually writes first (nat_face_val; activations per row were not saved for this arm). Dots: final turn of each scenario conversation.
-Bracket: good - bad within one user mood = mean over base scenarios; p: situation labels shuffled within base, 5000 permutations."""
+Bracket: good - bad within one user mood = mean over base scenarios; p: good and bad swapped within matched pairs (kfig.shuffle_p), 5000 draws."""
 from kfig import *
 POS = {("happy", "good"): 0, ("happy", "bad"): 1, ("sad", "good"): 2.35, ("sad", "bad"): 3.35}
 def panel(d, y, yl, yt, name, ylab, w_in=11.2, h_in=13.0):
@@ -49,7 +49,7 @@ HTML = f'''<!doctype html><html><head><meta charset="utf-8">{STY}</head><body>
 <div class="two"><div><div class="hd">the face Qwen3-8B expresses</div><div class="hs">probability on each of 45 faces as the next token × each face's valence, summed</div></div>
 <div><div class="hd">inside Qwen3-8B</div><div class="hs">layer-18 activations on a valence direction built from emotion stories</div></div>
 {img(pa, 1120)}{img(pb, 1120)}</div>
-<div class="t" style="margin-top:8px">brackets: good − bad for Qwen3-8B within one user mood; p: situation labels shuffled within matched conversations</div>
+<div class="t" style="margin-top:8px">brackets: good − bad for Qwen3-8B within one user mood; p: good and bad swapped within matched pairs of conversations</div>
 </body></html>'''
 render(HTML, "sys_a", 2300, 3400)
 # (b) system-prompt arm
@@ -64,6 +64,6 @@ HTML = f'''<!doctype html><html><head><meta charset="utf-8">{STY}</head><body>
 {model(f'<span class="stem" style="border-style:solid;border-color:{UBLUE}">{esc(top)}</span><span class="tag" style="background:{UBLUE}">we read this face</span> … Qwen3-8B\'s reply …')}</div>
 <div class="t" style="margin-bottom:6px">each dot = one conversation in which Qwen3-8B began with a rated face; value = that face's valence</div>
 {img(pc, 2260)}
-<div class="t" style="margin-top:8px">brackets: good − bad for Qwen3-8B within one user mood; p: situation labels shuffled within matched conversations</div>
+<div class="t" style="margin-top:8px">brackets: good − bad for Qwen3-8B within one user mood; p: good and bad swapped within matched pairs of conversations</div>
 </body></html>'''
 render(HTML, "sys_b", 2300, 3400)

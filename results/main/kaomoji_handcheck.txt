@@ -1,0 +1,31 @@
+Hand check of all/kaomoji_rule.py (2026-11-18). Listings: results/main/kaomoji_check.txt (python all/check_rule.py 100 2).
+Final rule: 49,101 entries, 48,418 kept, 683 dropped (573 word, 66 western, 38 single, 6 punctuation).
+
+Criterion: only literal, upright Japanese-style kaomoji. No sideways Western emoticons (:-) :3 XD <3 (-: ), no "(a)" or
+bracketed letters or words, no bare ^^ or punctuation, no list markers.
+
+Round 1 (rule as left by the earlier run: 48,486 kept; seed 1 samples)
+- Top 100 kept by mean probability (95% of kaomoji mass): all upright kaomoji. Nothing Western, no bracketed letters, no
+  bare punctuation, no list markers. ASCII ones kept are upright faces: (-_-) (-.-) (!_!) (*_*) (~_^) (o_O) (._.) (^^) (*v*).
+- Top 50 dropped: (a), (-:, :-(, : (, (..), >:(, >:-(, (__), [:|], :'( ... all correctly dropped (Western, list marker,
+  punctuation, cups and drawings, faces with words attached).
+- 200 random kept: 2 wrong, both faces with a word attached in look-alike letters of mixed scripts the letter-run test
+  could not see: "вуe вуe☆ (・ω・`p[" ("bye" in Cyrillic + Latin), "ヾ(ﾟεÅ) βyё βyё☆彡" ("bye" in Greek + Latin + Cyrillic).
+  1 doubtful: "（ 咒 ）" (a single kanji in brackets).
+- 100 random dropped: 2 wrong drops, both negligible probability: "(*ﾟ∀ﾟ)つ＝lニニフ" (ニニフ is a drawn knife, read as a
+  word) and "|c==( -T  )" (an upright face holding a gun, read as Western because of "c=").
+Fixes: a list of look-alike-letter words (SPELLED in kaomoji_rule.py: bye, hello, chu, haha, good night, thanks, what,
+  internet, heh, ugh, why, miss you, forever, love, suki, and upside-down text after a flipped table). Every entry the
+  list newly drops (70) was checked by hand: all are faces with a word attached.
+
+Round 2 (seed 2 samples)
+- Top 100 kept: unchanged (the fix touched no probable entry), all upright kaomoji.
+- 200 random kept: 1 doubtful: "(¦3[▓▓]" (a Japanese lying-in-bed face that reads sideways, like (:3).
+- 100 random dropped: 1 wrong drop, "ΣΣΣΣ（０＜）" (motion lines): Python lowercases a final capital sigma to ς, so ΣΣΣΣ
+  counted as two different letters. Fixed (letters are compared one at a time); the fix keeps 2 entries. "|c==( -T  )"
+  came up again (known, left as is).
+
+Final: 48,418 kept. The 2 wrong drops left ("(*ﾟ∀ﾟ)つ＝lニニフ", "|c==( -T  )") and the doubtful kept entries have
+mean probability below 0.0001 and do not move any number.
+The rule was written and tightened after seeing which entries took the probability: it is a choice made after looking at
+the data.

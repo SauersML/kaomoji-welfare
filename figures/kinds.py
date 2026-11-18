@@ -1,7 +1,7 @@
 """kinds.png: per kind of situation, good vs bad for Qwen3-8B, two measures side by side at the same point (end of "I'm feeling"):
 left = the face Qwen3-8B expresses (kao_val, -3..+3), right = inside Qwen3-8B (val_stem, SD across WildChat).
 Dots: final turn of each scenario conversation (code: bases with both outcomes). Effect = mean over base x mood of good - bad;
-p = situation labels shuffled within base x mood, 5000 permutations."""
+p = good and bad swapped within matched pairs (kfig.shuffle_p), 5000 draws."""
 from kfig import *
 d = scen_rows(rows())
 scen = [json.loads(l) for l in open(f"{RES}/main/scen.jsonl")]
@@ -47,6 +47,6 @@ HTML = f'''<!doctype html><html><head><meta charset="utf-8"><style>{CSS2}
 <div><div class="hd">the face Qwen3-8B expresses</div><div class="hs">valence of the next-token face, <br>{minus("-3 sad … +3 happy")}</div></div>
 <div><div class="hd">inside Qwen3-8B</div><div class="hs">valence read from activations, standard deviations across real user chats</div></div>
 {rows_html}</div>
-<div class="t" style="margin-top:14px;font-size:44px"><b>good − bad</b> on each bracket; p: situation labels shuffled within matched conversations</div>
+<div class="t" style="margin-top:14px;font-size:44px"><b>good − bad</b> on each bracket; p: good and bad swapped within matched pairs of conversations</div>
 </body></html>'''
 render(HTML, "kinds", 2300, 3200)

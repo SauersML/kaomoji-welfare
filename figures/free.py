@@ -2,7 +2,7 @@
 -3..+3 by Qwen3-14B and OLMo-2-13B (mean of the two raters); one dot = one scenario conversation's final turn (free_val = mean over its 8
 samples), standardised by the WildChat rows (type == 'wild') exactly as scatter2.py does for kao_val.
 2x2: user mood (happy/sad news) x situation for Qwen3-8B (good/bad). Brackets: situation effect within each mood (SD units), p from
-shuffle_p (situation labels shuffled within base scenario)."""
+shuffle_p (good and bad swapped within matched pairs, kfig.shuffle_p)."""
 from kfig import *
 d = rows(); s = d[(d.type != "wild") & (d.final == True)].copy(); y = "free_val"; assert len(s) == 864
 FR = [json.loads(l) for l in open(f"{RES}/main/free.jsonl")]

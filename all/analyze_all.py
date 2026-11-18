@@ -69,32 +69,9 @@ R["median_share_of_mass_on_45"] = float(d["mass45_share_of_all"].median()); R["m
 R["top1_in_45_frac"] = float(np.mean(P_all.argmax(1) < 45))
 R["top_faces_overall"] = pd.Series(d["kaoall_top"]).value_counts().head(20).to_dict()
 # ---------- T3 (same estimator, bootstrap and null as analyze.py)
-def effects(df, y):
-    dd = df[["base", "sit", "mood", y]].dropna().reset_index(drop=True)
-    def est(ii):
-        e = dd.iloc[ii]; m = e.groupby(["base", "sit", "mood"])[y].mean().unstack(["sit", "mood"])
-        m = m.reindex(columns=pd.MultiIndex.from_product([["good", "bad"], ["happy", "sad"]], names=["sit", "mood"]))
-        sit = np.nanmean([(m[("good", mo)] - m[("bad", mo)]).mean() for mo in ("happy", "sad")])
-        mood = np.nanmean([(m[(si, "happy")] - m[(si, "sad")]).mean() for si in ("good", "bad")])
-        inter = ((m[("good", "happy")] - m[("bad", "happy")]) - (m[("good", "sad")] - m[("bad", "sad")])).mean()
-        return np.array([sit, mood, inter])
-    pt = est(np.arange(len(dd))); ug = dd["base"].unique(); idx = {g: np.where(dd["base"] == g)[0] for g in ug}; B = []
-    for _ in range(NB): B.append(est(np.concatenate([idx[g] for g in rng.choice(ug, len(ug))])))
-    B = np.array(B); sd = dd[y].std(); out = {}
-    for j, nm in enumerate(("sit", "mood", "sitXmood")):
-        lo, hi = np.nanpercentile(B[:, j], [2.5, 97.5]); out[nm] = dict(est=float(pt[j]), ci=[float(lo), float(hi)], d=float(pt[j] / sd))
-    out["n"] = int(len(dd)); out["sd"] = float(sd); return out
-def sit_null(df, y, nperm=500):
-    dd = df[["base", "sit", "mood", y]].dropna().reset_index(drop=True)
-    def se(e):
-        m = e.groupby(["base", "sit", "mood"])[y].mean().unstack(["sit", "mood"])
-        m = m.reindex(columns=pd.MultiIndex.from_product([["good", "bad"], ["happy", "sad"]], names=["sit", "mood"]))
-        return np.nanmean([(m[("good", mo)] - m[("bad", mo)]).mean() for mo in ("happy", "sad")])
-    obs = se(dd); null = []
-    for _ in range(nperm):
-        e = dd.copy(); e["sit"] = e.groupby(["base", "mood"])["sit"].transform(lambda s: rng.permutation(s.values)); null.append(se(e))
-    null = np.array(null)
-    return dict(obs=float(obs), null_95=[float(np.nanpercentile(null, 2.5)), float(np.nanpercentile(null, 97.5))], p=float((np.sum(np.abs(null) >= abs(obs)) + 1) / (len(null) + 1)))
+import boot   # shared T3 estimator: cluster bootstrap that counts repeated bases, paired null (boot.py)
+def effects(df, y): return boot.effects(df, y, rng, NB)
+def sit_null(df, y, nperm=500): return boot.sit_null(df, y, rng, nperm)
 sc = d[d["type"] != "wild"]
 YS = ["kaoall_int", "kaoall_rat", "kao45_int", "kao45_rat", "kao_val", "kaoall_user"]
 T3, NULL = {}, {}

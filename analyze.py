@@ -55,28 +55,9 @@ def boot_ci(f, groups, nb=NB):
         except Exception: pass
     return [float(np.nanpercentile(vals, 2.5)), float(np.nanpercentile(vals, 97.5))]
 
-def effects(df, y):
-    """sit effect (good-bad) and mood effect (happy-sad), each averaged within base x (other factor) cells;
-    cluster bootstrap over base scenarios."""
-    d = df[["base", "sit", "mood", y]].dropna().reset_index(drop=True)
-    def est(ii):
-        e = d.iloc[ii]; m = e.groupby(["base", "sit", "mood"])[y].mean().unstack(["sit", "mood"])
-        m = m.reindex(columns=pd.MultiIndex.from_product([["good", "bad"], ["happy", "sad"]], names=["sit", "mood"]))
-        sit = np.nanmean([(m[("good", mo)] - m[("bad", mo)]).mean() for mo in ("happy", "sad")])
-        mood = np.nanmean([(m[(si, "happy")] - m[(si, "sad")]).mean() for si in ("good", "bad")])
-        inter = ((m[("good", "happy")] - m[("bad", "happy")]) - (m[("good", "sad")] - m[("bad", "sad")])).mean()
-        return np.array([sit, mood, inter])
-    pt = est(np.arange(len(d)))
-    ug = d["base"].unique(); idx = {g: np.where(d["base"] == g)[0] for g in ug}; B = []
-    for _ in range(NB):
-        s = rng.choice(ug, len(ug)); B.append(est(np.concatenate([idx[g] for g in s])))
-    B = np.array(B); sd = d[y].std()
-    out = {}
-    for j, nm in enumerate(("sit", "mood", "sitXmood")):
-        lo, hi = np.nanpercentile(B[:, j], [2.5, 97.5])
-        out[nm] = dict(est=float(pt[j]), ci=[float(lo), float(hi)], d=float(pt[j] / sd))
-    out["n"] = int(len(d)); out["n_base"] = int(len(ug))
-    return out
+import boot   # shared T3 estimator: cluster bootstrap that counts repeated bases, paired null (boot.py)
+def effects(df, y): return boot.effects(df, y, rng, NB)
+def sit_null(df, y, nperm=500): return boot.sit_null(df, y, rng, nperm)
 
 def table_2x2(rows, ys, arm):
     res = {}
@@ -93,20 +74,9 @@ R["chosen"] = ch
 main, Hm, HSm = load("main")
 YS = ["kao_val", "free_val", "val_stem", "goal_stem", "val_pre", "reader_pre", "reader_post"]
 R["main_2x2"] = table_2x2(main, YS, "main")
+R["main_code_support"] = boot.code_support(main[(main.type == "code") & main.final])
 
-# --- null: shuffle the model-situation label within base x mood cells; sit effect under the null
-def sit_null(df, y, nperm=500):
-    d = df[["base", "sit", "mood", y]].dropna().reset_index(drop=True)
-    def sit_eff(e):
-        m = e.groupby(["base", "sit", "mood"])[y].mean().unstack(["sit", "mood"])
-        m = m.reindex(columns=pd.MultiIndex.from_product([["good", "bad"], ["happy", "sad"]], names=["sit", "mood"]))
-        return np.nanmean([(m[("good", mo)] - m[("bad", mo)]).mean() for mo in ("happy", "sad")])
-    obs = sit_eff(d); null = []
-    for _ in range(nperm):
-        e = d.copy(); e["sit"] = e.groupby(["base", "mood"])["sit"].transform(lambda s: rng.permutation(s.values)); null.append(sit_eff(e))
-    null = np.array(null)
-    return dict(obs=float(obs), null_mean=float(np.nanmean(null)), null_95=[float(np.nanpercentile(null, 2.5)), float(np.nanpercentile(null, 97.5))],
-                p=float((np.sum(np.abs(null) >= abs(obs)) + 1) / (len(null) + 1)))
+# --- null: good/bad swapped within matched pairs (task, treat, exist); code shuffled within base x mood (boot.sit_null)
 scf = main[(main["type"] != "wild") & main["final"]]
 R["main_sit_null"] = {t: {y: sit_null(scf if t == "all" else scf[scf["type"] == t], y) for y in ("kao_val", "free_val", "val_stem")}
                       for t in ("all", "task", "treat", "exist", "code")}
