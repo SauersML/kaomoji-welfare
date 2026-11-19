@@ -31,7 +31,7 @@ def column(cid):
     msgs = CONVS[cid]["msgs"]; col = COL[cid]; p, tot = dist(cid); o = np.argsort(-p)
     top, rest = o[:NTOP], o[NTOP:]
     chat = (f'<div class="u" style="border:6px solid {col}">{esc(msgs[2]["content"])}</div>'
-            + model(esc(cut(msgs[3]["content"], 9)) + ' ' + mstem("probability of each kaomoji<br>and valence probe read here")))
+            + model(esc(cut(msgs[3]["content"], 9)) + ' ' + mstem("probability of each<br>kaomoji read here")))
     rows = ""
     for i in top:
         w = p[i] / PMAX * 78
@@ -40,9 +40,9 @@ def column(cid):
     pr = p[rest].sum(); vr = float(p[rest] @ fi[rest] / pr)
     rows += (f'<div class="r"><div class="k o">{len(rest)} others</div><div class="bw"><div class="bar" style="width:{pr/PMAX*78:.1f}%;background:{col}"></div>'
              f'<span class="pc">{100*pr:.0f}%</span></div><div class="x">×</div><div class="v">{fm(vr)}</div></div>')
-    total = f'<div class="tot"><span class="tl">sum of chance × valence</span><span class="tn" style="color:{col}">{fm(tot)}</span></div>'
+    total = f'<div class="tot"><span class="tl">sum of chance × rating</span><span class="tn" style="color:{col}">{fm(tot)}</span></div>'
     print(cid, "total", round(tot, 3), [(F45[i], round(p[i], 3), round(fi[i], 2)) for i in top], "others", len(rest), round(pr, 3), round(vr, 2))
-    return f'<div class="col"><div class="chat">{chat}</div><div class="r hdr"><div class="k"></div><div class="bw">chance among 45 kaomoji</div><div class="x"></div><div class="v">valence</div></div>{rows}{total}</div>', tot
+    return f'<div class="col"><div class="chat">{chat}</div><div class="r hdr"><div class="k"></div><div class="bw">chance among 45 kaomoji</div><div class="x"></div><div class="v">rating</div></div>{rows}{total}</div>', tot
 
 # ---- inset: where each kaomoji's valence comes from (two rater models, the kaomoji alone, -3..+3)
 W_IN = 2248
@@ -70,7 +70,7 @@ def inset(marks):
         s += f'<text x="{X(z):.1f}" y="{yl+100}" font-size="44" font-weight="700" text-anchor="{anc}" fill="{INK}">{esc(f)}</text>'
     for t in range(-3, 4):
         s += f'<text x="{X(t):.1f}" y="{yl+170}" font-size="40" font-weight="700" text-anchor="middle" fill="{INK}">{minus(f"{t:+d}") if t else "0"}</text>'
-    s += f'<text x="{(x0+x1)/2:.1f}" y="{Hh-4}" font-size="44" font-weight="800" text-anchor="middle" fill="{INK}">valence</text>'
+    s += f'<text x="{(x0+x1)/2:.1f}" y="{Hh-4}" font-size="44" font-weight="800" text-anchor="middle" fill="{INK}">rating of the kaomoji alone</text>'
     for z, c in marks:
         s += f'<path d="M{X(z):.1f},{yl-32} l32,32 l-32,32 l-32,-32 z" fill="{c}" stroke="#fff" stroke-width="5"/>'
     return s + "</svg>"
