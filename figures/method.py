@@ -40,9 +40,9 @@ def column(cid):
     pr = p[rest].sum(); vr = float(p[rest] @ fi[rest] / pr)
     rows += (f'<div class="r"><div class="k o">{len(rest)} others</div><div class="bw"><div class="bar" style="width:{pr/PMAX*78:.1f}%;background:{col}"></div>'
              f'<span class="pc">{100*pr:.0f}%</span></div><div class="x">×</div><div class="v">{fm(vr)}</div></div>')
-    total = f'<div class="tot"><span class="tl">sum of chance × rating</span><span class="tn" style="color:{col}">{fm(tot)}</span></div>'
+    total = f'<div class="tot"><span class="tl">sum of probability × rating</span><span class="tn" style="color:{col}">{fm(tot)}</span></div>'
     print(cid, "total", round(tot, 3), [(F45[i], round(p[i], 3), round(fi[i], 2)) for i in top], "others", len(rest), round(pr, 3), round(vr, 2))
-    return f'<div class="col"><div class="chat">{chat}</div><div class="r hdr"><div class="k"></div><div class="bw">chance among 45 kaomoji</div><div class="x"></div><div class="v">rating</div></div>{rows}{total}</div>', tot
+    return f'<div class="col"><div class="chat">{chat}</div><div class="r hdr"><div class="k"></div><div class="bw">probability among 45 kaomoji</div><div class="x"></div><div class="v">rating</div></div>{rows}{total}</div>', tot
 
 # ---- inset: where each kaomoji's valence comes from (two rater models, the kaomoji alone, -3..+3)
 W_IN = 2248
