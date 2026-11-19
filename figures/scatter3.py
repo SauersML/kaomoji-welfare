@@ -28,9 +28,9 @@ for tr, te in GroupKFold(5).split(X, y, d["cluster"].values):
     pr[te] = RidgeCV(alphas=np.logspace(0, 5, 11)).fit(X[tr], y[tr]).predict(X[te])
 d["probe"] = pr; d["reader17"] = d["reader_post"] + 4
 TEAL, ORANGE = "#0E8C7F", "#E8710A"
-P = [("reader17", "reader_post", TEAL, "Qwen3‑8B rates\nthe transcript", "rating, 1 to 7", [1, 4, 7]),
-     ("val_stem", "val_axis_stem", PURPLE, "valence direction\nat “I'm feeling”", "projection (SD)", [-2, 0, 2]),
-     ("probe", "ridge_stem_cv", ORANGE, "probe at\n“I'm feeling”", "predicted valence", [0, 1, 2, 3])]
+P = [("reader17", "reader_post", TEAL, "Qwen3‑8B rates\nthe transcript", "rating, 1 to 7", [4, 5, 6, 7]),
+     ("val_stem", "val_axis_stem", PURPLE, "valence\ndirection", "standard deviations", [-2, 0, 2]),
+     ("probe", "ridge_stem_cv", ORANGE, "probe trained\non the kaomoji", "predicted rating", [0, 1, 2, 3])]
 for c, k, *_ in P:
     r = spearmanr(d[c], y)[0]; assert abs(r - T4[k]["rho"]) < 1e-9, (c, r, T4[k]["rho"])
 plt.rcParams.update({"font.size": 46})
@@ -43,15 +43,15 @@ for a, (c, k, col, title, xl, xt) in zip(ax, P):
     a.set_xticks(xt); a.set_xticklabels([minus(f"{t:+d}") if (t and c != "reader17") else str(t) for t in xt])
     a.set_xlabel(xl, fontsize=46, labelpad=8)
     a.set_title(title, color=col, fontsize=48, fontweight="bold", loc="left", pad=14, linespacing=1.05)
-    lo, hi = T4[k]["ci"]
-    a.text(0.03, 0.99, minus(f"ρ = {T4[k]['rho']:.2f}"), transform=a.transAxes, color=col, fontsize=56, fontweight="bold", va="top", ha="left", zorder=6)
-    a.text(0.03, 0.865, minus(f"95% CI {lo:.2f} to {hi:.2f}"), transform=a.transAxes, color=col, fontsize=44, fontweight="bold", va="top", ha="left", zorder=6)
-ax[0].set_xlim(0.35, 7.4)
+    a.text(0.03, 0.99, minus(f"{T4[k]['rho']:.2f}"), transform=a.transAxes, color=col, fontsize=80, fontweight="bold", va="top", ha="left", zorder=6)
+ax[0].text(0.35, 0.975, "rank correlation\nwith the kaomoji", transform=ax[0].transAxes, fontsize=40, va="top", ha="left", color=INK, linespacing=1.05)
+ax[0].text(5.6, -1.0, "dot = one conversation", fontsize=40, ha="center", va="center", color=INK)
+ax[0].set_xlim(3.2, 7.35)
 ax[1].set_xlim(-2.9, 3.6); ax[2].set_xlim(-0.6, 3.3)
 yt = [-1, 0, 1, 2, 3]
 ax[0].set_yticks(yt); ax[0].set_yticklabels([minus(f"{t:+d}") if t else "0" for t in yt])
-ax[0].set_ylim(-1.0, 4.25); ax[0].set_ylabel("valence of the next kaomoji", fontsize=46, labelpad=6)
-for a in ax: a.spines["left"].set_bounds(-1.0, 3.05)
+ax[0].set_ylim(-1.3, 4.25); ax[0].set_ylabel("rating of the next kaomoji", fontsize=46, labelpad=6)
+for a in ax: a.spines["left"].set_bounds(-1.3, 3.05)
 out = {c: round(float(spearmanr(d[c], y)[0]), 3) for c, *_ in P}; print(out, len(d))
 fig.subplots_adjust(left=0.075, right=0.995, top=0.865, bottom=0.165, wspace=0.12)
 Pp = figpng(fig, "scatter3")
