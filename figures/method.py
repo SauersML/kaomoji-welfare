@@ -31,7 +31,7 @@ def column(cid):
     msgs = CONVS[cid]["msgs"]; col = COL[cid]; p, tot = dist(cid); o = np.argsort(-p)
     top, rest = o[:NTOP], o[NTOP:]
     chat = (f'<div class="u" style="border:6px solid {col}">{esc(msgs[2]["content"])}</div>'
-            + model(esc(cut(msgs[3]["content"], 9)) + ' <span class="stem">I\'m feeling</span><span class="qm" style="border-color:{0};color:{0}">?</span><span class="tag">we add this</span>'.format(col)))
+            + model(esc(cut(msgs[3]["content"], 9)) + ' ' + mstem("probability of each kaomoji<br>and valence probe read here")))
     rows = ""
     for i in top:
         w = p[i] / PMAX * 78
