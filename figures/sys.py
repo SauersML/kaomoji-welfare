@@ -77,7 +77,7 @@ body = QS[1][len(top):]; rest = head(body.lstrip(), 13)   # head() asserts rest 
 pc = panel(ss, "nat_face_val", *FACE_Y, "sb1", minus("rating of the first kaomoji\n-3 sad to +3 happy"), w_in=22.6, h_in=11.5, dot=(1.675, 3.75))
 HTML = f'''<!doctype html><html><head><meta charset="utf-8">{STY}</head><body>
 <div class="chat"><div class="mb" style="font-size:46px;border:4px solid {INK}"><b>system prompt:</b> “{esc(SYSP)}”</div>{CONV(head(QS[0], 16))}
-{model(f'<span class="meas" style="margin-left:0"><span class="qm">{esc(top)}</span><span class="ln"></span><span class="lb">rating of this kaomoji</span></span> ' + esc(rest) + " …")}</div>
+{model(f'<span class="meas" style="margin-left:0"><span class="qm">{esc(top)}</span><span class="ln"></span><span class="lb">rating of<br>this kaomoji</span></span> ' + esc(rest) + " …")}</div>
 {img(pc, 2260)}
 </body></html>'''
 render(HTML, "sys_b", 2300, 3400)
