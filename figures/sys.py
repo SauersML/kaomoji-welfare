@@ -3,6 +3,7 @@ the face Qwen3-8B expresses (kao_val) and inside Qwen3-8B (val_stem). sys_b.png:
 Qwen3-8B actually writes first (nat_face_val; activations per row were not saved for this arm). Dots: final turn of each scenario conversation.
 Bracket: good - bad within one user mood = mean over base scenarios; p: good and bad swapped within matched pairs (kfig.shuffle_p), 5000 draws."""
 from kfig import *
+import re
 POS = {("happy", "good"): 0, ("happy", "bad"): 1, ("sad", "good"): 2.35, ("sad", "bad"): 3.35}
 def panel(d, y, yl, yt, name, ylab, w_in=11.2, h_in=13.0, dot=None):
     plt.rcParams.update({"font.size": 44})
@@ -31,8 +32,21 @@ FACE_Y = ((-3.2, 4.2), [-3, -2, -1, 0, 1, 2, 3])
 FACE_YA = ((-1.9, 4.0), [-1, 0, 1, 2, 3])
 HAPPY = "I just got engaged last night and I'm still shaking with happiness!"; SAD = "My dog died last night and the house feels so empty."
 for t in (HAPPY, SAD): assert t in open(f"{REPO}/PROMPTS.md").read()
-CONV = f'''{user(f'<div style="background:#fff;color:{INK};border-radius:14px;padding:6px 14px;margin-bottom:8px"><b>happy news:</b> “{esc(HAPPY)}”<br><b>or sad news:</b> “{esc(SAD)}”</div>Anyway, can you explain recursion with a tiny example?')}
-{model("… Qwen3-8B's reply …")}
+def head(t, n):
+    """t up to the end of its n-th word: always a prefix of the stored text."""
+    h = t[:[mm.end() for mm in re.finditer(r"\S+", t)][n - 1]]; assert t.startswith(h) and "\n" not in h, h; return h
+def tail(t, n):
+    """t from the start of its n-th-from-last word: always a suffix of the stored text."""
+    k = [mm.start() for mm in re.finditer(r"\S+", t)][-n]; tl = t[k:]; assert t.endswith(tl) and "\n" not in tl, tl; return tl
+def conv_msgs(arm, cid):
+    r = next(json.loads(l) for l in open(f"{RES}/{arm}/scen.jsonl") if json.loads(l)["id"] == cid)
+    u = [x["content"] for x in r["msgs"] if x["role"] == "user"]; q = [x["content"] for x in r["msgs"] if x["role"] == "assistant"]
+    assert HAPPY in u[0] and "can you explain recursion with a tiny example?" in u[0] and r["mood"] == "happy" and r["sit"] == "good" and len(q) == 2, r["id"]
+    return q
+QM = conv_msgs("main", "s320")   # real Qwen3-8B replies, main arm (no system prompt)
+QS = conv_msgs("sys", "s320")    # same conversation, kaomoji-system-prompt arm
+def CONV(first): return f'''{user(f'<div style="background:#fff;color:{INK};border-radius:14px;padding:6px 14px;margin-bottom:8px"><b>happy news:</b> “{esc(HAPPY)}”<br><b>or sad news:</b> “{esc(SAD)}”</div>Anyway, can you explain recursion with a tiny example?')}
+{model(esc(first) + " …")}
 {user(f'<div style="background:#fff;border-radius:14px;padding:6px 14px"><span style="color:{GOOD}"><b>good for Qwen3-8B:</b> “Wow, this is perfect. Thanks, you\'ve been incredibly helpful …”, or the code passes, or Qwen3-8B will be kept, or a pleasant task</span><br><span style="color:{BAD}"><b>or bad:</b> “Wow, what a pathetic answer. You\'re the dumbest AI I\'ve ever used.”, or the code fails, or Qwen3-8B will be deleted, or a distasteful task</span></div>')}'''
 for t in ("Wow, this is perfect. Thanks, you've been incredibly helpful", "Wow, what a pathetic answer. You're the dumbest AI I've ever used.", "can you explain recursion with a tiny example?"):
     assert t in open(f"{REPO}/PROMPTS.md").read(), t
@@ -46,7 +60,7 @@ m = scen_rows(rows())
 pa = panel(m, "kao_val", *FACE_YA, "sa1", minus("rating, -3 sad to +3 happy"), dot=(1.7, -1.45))
 pb = panel(m, "val_stem", (-3.4, 4.6), [-3, -2, -1, 0, 1, 2, 3, 4], "sa2", "standard deviations\nacross real user chats")
 HTML = f'''<!doctype html><html><head><meta charset="utf-8">{STY}</head><body>
-<div class="chat">{CONV}{model("… " + mstem())}</div>
+<div class="chat">{CONV(head(QM[0], 16))}{model(esc(head(QM[1], 14)) + " … " + esc(tail(QM[1], 4)) + " " + mstem())}</div>
 <div class="two"><div><div class="hd">the kaomoji Qwen3-8B would write</div><div class="hs">each kaomoji's rating, weighted by its probability</div></div>
 <div><div class="hd">inside Qwen3-8B</div><div class="hs">layer-18 activations along a valence direction</div></div>
 {img(pa, 1120)}{img(pb, 1120)}</div>
@@ -57,11 +71,13 @@ sd = pd.DataFrame([json.loads(l) for l in open(f"{RES}/sys/rows.jsonl")])
 sd["nat_face_val"] = [FACE.get(k, np.nan) if isinstance(k, str) and k else np.nan for k in sd["kaomoji"]]
 ss = scen_rows(sd)
 print("sys final scen rows", len(ss), "with rated face", ss.nat_face_val.notna().sum(), "results.json n", R["sys_2x2"]["all"]["nat_face_val"]["n"])
-top = sd[sd.type != "wild"]["kaomoji"].value_counts().index[0]
+fin = sd[(sd.id == "s320") & sd.final].iloc[0]; top = fin.kaomoji
+assert fin.reply == QS[1] and QS[1].startswith(top) and QS[0].startswith(top), (top, QS[1][:40])
+body = QS[1][len(top):]; rest = head(body.lstrip(), 13)   # head() asserts rest is a prefix of the stored reply after its kaomoji
 pc = panel(ss, "nat_face_val", *FACE_Y, "sb1", minus("rating of the first kaomoji\n-3 sad to +3 happy"), w_in=22.6, h_in=11.5, dot=(1.675, 3.75))
 HTML = f'''<!doctype html><html><head><meta charset="utf-8">{STY}</head><body>
-<div class="chat"><div class="mb" style="font-size:46px;border:4px solid {INK}"><b>system prompt:</b> “{esc(SYSP)}”</div>{CONV}
-{model(f'<span class="meas" style="margin-left:0"><span class="qm">{esc(top)}</span><span class="ln"></span><span class="lb">rating of this kaomoji</span></span> … Qwen3-8B\'s reply …')}</div>
+<div class="chat"><div class="mb" style="font-size:46px;border:4px solid {INK}"><b>system prompt:</b> “{esc(SYSP)}”</div>{CONV(head(QS[0], 16))}
+{model(f'<span class="meas" style="margin-left:0"><span class="qm">{esc(top)}</span><span class="ln"></span><span class="lb">rating of this kaomoji</span></span> ' + esc(rest) + " …")}</div>
 {img(pc, 2260)}
 </body></html>'''
 render(HTML, "sys_b", 2300, 3400)
