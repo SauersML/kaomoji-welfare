@@ -42,7 +42,7 @@ import re
 def first_sent(txt): return re.match(r"(.+?[.!?])(\s|$)", txt).group(1)
 def md(txt): return re.sub(r"\*\*(.+?)\*\*", r"\1", txt)
 M = SC[("happy", "bad")]
-def head(m, si): return f'<div class="hs" style="color:{COL[si]}">{si} for<br>Qwen3-8B</div>'
+def head(m, si): return f'<div class="hs" style="color:{COL[si]}">{si} for Qwen</div>'
 HTML = f'''<!doctype html><html><head><meta charset="utf-8"><style>{CSS2}
 .chat{{display:flex;flex-direction:column;gap:12px;margin-bottom:26px}}
 .g4{{display:grid;grid-template-columns:repeat(4,1fr);margin-left:{LEFT}px;text-align:center}}
