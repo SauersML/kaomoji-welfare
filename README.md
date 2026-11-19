@@ -12,7 +12,7 @@ To read the face, we add "I'm feeling" at the end of Qwen's last reply and take 
 
 It works. What happens to Qwen moves the face about twice as much as the user's mood does, and a null that swaps good and bad within matched pairs of conversations never comes close. It also holds on 48,418 dictionary kaomoji. The cleanest case is the note about being kept or deleted: the user's tone is neutral in both versions, so there is no mood to mirror.
 
-Is something inside Qwen driving the face? Let's test with a valence direction: the main axis of Qwen's layer-18 activations over 720 short emotion stories they wrote, with no kaomoji anywhere. Read at "I'm feeling", it predicts the face better than Qwen3-8B rating the transcript: a rank correlation of 0.68 against 0.52, over 1,164 final turns, including real WildChat chats. A probe trained on the same activations to predict the face reaches 0.79.
+Is something inside Qwen driving the face? Let's test with a valence direction: the main axis of Qwen's layer-18 activations averaged per feeling, from short emotion stories they wrote (36 feelings, fit on 360 of 720 stories), with no kaomoji anywhere. Read at "I'm feeling", it predicts the face better than Qwen3-8B rating the transcript: a rank correlation of 0.68 against 0.52, over 1,164 final turns, including real WildChat chats. A probe trained on the same activations to predict the face reaches 0.79.
 
 ![The valence direction and the probe track the kaomoji more closely than Qwen3-8B rating the transcript.](figures/scatter3.png)
 

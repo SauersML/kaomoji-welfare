@@ -60,7 +60,7 @@ HTML = f'''<!doctype html><html><head><meta charset="utf-8"><style>{CSS2}
 <div class="card"><div class="t"><b>720 short stories Qwen3-8B wrote</b></div>{user("Write a short story (about 120 words) about a person on a train who is feeling proud. …")}
 <div class="t">36 feelings: {emos}</div></div>
 <div class="arrow">→</div>
-<div class="card dir"><div class="big">valence direction</div><div class="t" style="color:{INK}">first principal component of Qwen3-8B's layer-18 activations over the 720 stories (no kaomoji in any story)</div></div>
+<div class="card dir"><div class="big">valence direction</div><div class="t" style="color:{INK}">first principal component of Qwen3-8B's layer-18 activations averaged per feeling (36 feelings), fit on half the stories; no kaomoji in any story</div></div>
 </div>
 <div class="row2">
 <div class="chat">{user(esc(msgs[-2]["content"]))}{model(esc(first(msgs[-1]["content"])) + " … " + mstem("kaomoji probability<br>measured here"))}
